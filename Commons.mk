@@ -1,0 +1,14 @@
+MAIN_PATH := $(PWD)
+
+RESULT_PATH := $(MAIN_PATH)/_result
+RESULT_BIN := $(RESULT_PATH)/bin
+RESULT_LIB := $(RESULT_PATH)/lib
+RESULT_OBJ := $(RESULT_PATH)/obj
+RESULT_INCLUDE := $(RESULT_PATH)/include
+
+CC := gcc
+CFLAGS := -Wall -Wextra -I$(RESULT_INCLUDE)
+CXX := g++
+CXXFLAGS := -Wall -Wextra -I$(RESULT_INCLUDE)
+
+PROJ_PATH_CORE := core
