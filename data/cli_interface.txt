@@ -1,0 +1,138 @@
+syst init [--project-path PATH] [--cache-path PATH]
+
+Что делает:
+
+Создаёт syst.yaml шаблон в project-path (по умолчанию .).
+
+Создаёт структуру .syst/ (или в --cache-path если указан).
+
+Флаги:
+
+--project-path — куда инициализировать (по умолчанию .).
+
+--cache-path — где хранить кеш/генерацию (по умолчанию ./.syst).
+
+Результат:
+
+syst.yaml, пустая .syst/ структура.
+
+2. syst fetch [PATH/TO/YAML] (по умолчанию .)
+
+Что делает:
+
+Загружает (клонирует) внешние источники, указанные в syst.yaml (git/http/local).
+
+Сохраняет их в .syst/checkouts/<id>/<rev>/.
+
+Обновляет/создаёт syst.lock (commit hashes).
+
+Почему важно:
+
+build/generate должны работать над фиксированным набором исходников.
+
+3. syst generate <path-to-syst.yaml> [--out GENERATED_DIR] [--cache-path PATH] [--force] [--dry-run] [--regen]
+
+Что делает:
+
+Парсит syst.yaml, разрешает зависимости (локальные/фетченные), вычисляет хэши входов и конфигурации.
+
+Генерирует build.ninja в генерации с уникальным id/hash: .syst/generated/<genhash>/build.ninja.
+
+Пишет метаданные генерации .syst/generated/<genhash>/metadata.json (inputs, env, generator-version).
+
+Кладёт build.ninja в кэш (локальный CAS) под ключ, зависящий от generator-version+inputs.
+
+Обновляет (опционально) syst.lock полями генерации.
+
+Флаги:
+
+<path-to-syst.yaml> — по умолчанию ./syst.yaml.
+
+--out — записать build.ninja в указанную директорию (для отладки).
+
+--cache-path — где хранить .syst (по умолчанию ./.syst).
+
+--force — перегенерировать даже если кэш есть.
+
+--dry-run — расчитать hash и показать, что будет сделано, но не записывать файлы.
+
+--regen — пересоздать генерацию для текущих sources, обновив genhash.
+
+Поведение кэша:
+
+Если генерация с тем же ключом уже в кэше — generate просто развернёт кэшированную build.ninja (или вернёт путь к ней) и не будет перегенерировать.
+
+Генерация build.ninja сама по себе кэшируется, потому что она зависит от входных исходников + env + версия генератора.
+
+4. syst build [--target TARGET] [--jobs N] [--ninja-args "..."] [--cache-path PATH] [--no-cache] [--cache-push-after]
+
+Что делает:
+
+Находит соответствующий сгенерированный build.ninja (по syst.lock / последней генерации / --out), вызывает ninja -f <file> с флагами.
+
+После успешной сборки (и если включён кэш) — упаковывает финальные артефакты (или их хэши) в локальный CAS.
+
+При наличии remote cache — опционально пушит (--cache-push-after).
+
+Флаги:
+
+--target — цель ninja (по умолчанию all / project.default_target).
+
+--jobs, -j — кол-во параллельных задач.
+
+--ninja-args — дополнительные аргументы напрямую в ninja.
+
+--no-cache — не использовать кэш (ни для чтения, ни для записи).
+
+--cache-push-after — после успешной сборки отправить в remote cache (требует настроек remote).
+
+Особенности:
+
+Перед запуском — CLI может проверять для каждого build-line наличие артефакта в кэше; при нахождении — распаковать в output вместо выполнения (opt-in / configurable).
+
+syst должен корректно обрабатывать сигналы и прерывания (SIGINT): аккуратно завершать запущенный ninja и не оставлять частично записанные артефакты в кэше (atomic).
+
+5. syst cache-push [--remote REMOTE_ID] [--key KEY]
+
+Пушит указанные артефакты/генерации в удалённый кэш (S3/MinIO/HTTP).
+
+Флаги:
+
+--remote — конфигурация remote, читается из ~/.syst/config или syst.yaml.
+
+--key — явно указать ключ(и) для пуша.
+
+6. syst cache-pull [--remote REMOTE_ID] [--key KEY]
+
+Тянет артефакт по ключу из remote cache в локальный CAS.
+
+7. syst status
+
+Показывает:
+
+Текущую генерацию (genhash).
+
+Наличие build.ninja в кэше.
+
+Наличие артефактов в локальном/удалённом кэше.
+
+Неиспользуемые/застывшие кеш-объекты.
+
+8. syst clean [--all] [--generated] [--cache] [--checkouts]
+
+Удаляет:
+
+--generated — сгенерированные build.ninja.
+--cache — локальный кэш (или старые ключи по политике).
+
+--checkouts — checkouts репозиториев.
+
+--all — всё вышеперечисленное.
+
+9. syst doctor
+
+Диагностика окружения: ninja доступен, git доступен, права на cache-path, конфигурация remote, версия generator.
+
+10. syst version, syst help
+
+Информация о версии генератора (важно для включения в cache-key).
