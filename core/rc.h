@@ -7,12 +7,9 @@
 #define ERROR_EMPTY_PTR                 -2
 #define ERROR_MEMORY_ALLOC              -3
 // cli
-#define ERROR_CNT_ARGS_INIT             -20
-#define ERROR_FIRST_ARG_INIT            -21
-#define ERROR_SECOND_ARG_INIT           -22
-#define ERROR_THIRD_ARG_INIT            -23
-#define ERROR_DIR_DONT_EXIST            -24
-#define ERROR_BAD_DIR                   -25
-#define ERROR_GET_VALUE_FROM_ARG        -26
+#define ERROR_PATH_NOT_EXIST           -20
+#define ERROR_PATH_NOT_DIR             -21
+#define ERROR_PARSE                    -22
+#define ERROR_DUPLICATE_ARG            -23
 
 #endif
